@@ -1,0 +1,23 @@
+{
+  "name": "M5MonsterC5 Cardputer ADV",
+  "version": "latest",
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "../firmware/cardputer-adv/bootloader-adv.bin",
+          "offset": 0
+        },
+        {
+          "path": "../firmware/cardputer-adv/partition-table-adv.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/cardputer-adv/M5MonsterC5-CardputerADV-adv.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

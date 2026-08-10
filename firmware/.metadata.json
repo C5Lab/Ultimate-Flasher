@@ -1,0 +1,157 @@
+{
+  "packages": {
+    "flipper-light": {
+      "files": {
+        "c5lab_dev.fap": {
+          "downloaded_at": "2026-07-13T08:23:15.647792+00:00",
+          "github_sha": "0838449d038bd4caa77a50487988297b967f3d0b",
+          "sha256": "478b20b7181f7c41da0cb47d409e6c579bbecc8e67b328eeea56c0fbc12db4a7",
+          "size": 71976,
+          "source_branch": "main",
+          "source_commit": "85422271bb4ca3f211a37e690cab58be603bb250",
+          "source_name": "c5lab_dev.fap",
+          "source_path": "FlipperLight/dist",
+          "source_repo": "C5Lab/projectZero"
+        }
+      },
+      "name": "Flipper Light App",
+      "source_branch": "main",
+      "source_commit": "85422271bb4ca3f211a37e690cab58be603bb250",
+      "source_path": "FlipperLight/dist",
+      "source_repo": "C5Lab/projectZero",
+      "synced_at": "2026-07-13T08:23:15.648111+00:00"
+    }
+  },
+  "schema": 1,
+  "targets": {
+    "cardputer-adv": {
+      "files": {
+        "M5MonsterC5-CardputerADV-adv.bin": {
+          "downloaded_at": "2026-07-13T08:07:13.326311+00:00",
+          "github_sha": "0ce73a1bbda940b109f95692f984454cd167f481",
+          "sha256": "1ea9a2fb1d4a6865b3c48fb2386c80c5997db77408961417368d4f871e3e6bff",
+          "size": 548336,
+          "source_branch": "main",
+          "source_commit": "9b6c51a3c9e25d8bedc8a954f1284ca23f3fb0f6",
+          "source_name": "M5MonsterC5-CardputerADV-adv.bin",
+          "source_path": "binaries-esp32s3/adv",
+          "source_repo": "C5Lab/M5MonsterC5-CardputerADV"
+        },
+        "bootloader-adv.bin": {
+          "downloaded_at": "2026-07-13T08:07:01.139354+00:00",
+          "github_sha": "bf5f3a1bd1f5e10fea793213d1bcb13b33018861",
+          "sha256": "aa560ca318e0a5a2d6a4fb6ffcb928bb63519e3e506d9e4d7dc22caef0b2127d",
+          "size": 22496,
+          "source_branch": "main",
+          "source_commit": "9b6c51a3c9e25d8bedc8a954f1284ca23f3fb0f6",
+          "source_name": "bootloader-adv.bin",
+          "source_path": "binaries-esp32s3/adv",
+          "source_repo": "C5Lab/M5MonsterC5-CardputerADV"
+        },
+        "partition-table-adv.bin": {
+          "downloaded_at": "2026-07-13T08:07:07.883411+00:00",
+          "github_sha": "4dce102065b755beb763c31593be2cea1e0159d3",
+          "sha256": "73c0b5c3e5fcba3a151cc70c453c93dd5f4798899e7f2f8cca76da1f32ffc501",
+          "size": 3072,
+          "source_branch": "main",
+          "source_commit": "9b6c51a3c9e25d8bedc8a954f1284ca23f3fb0f6",
+          "source_name": "partition-table-adv.bin",
+          "source_path": "binaries-esp32s3/adv",
+          "source_repo": "C5Lab/M5MonsterC5-CardputerADV"
+        }
+      },
+      "name": "M5MonsterC5 Cardputer ADV",
+      "source_branch": "main",
+      "source_commit": "9b6c51a3c9e25d8bedc8a954f1284ca23f3fb0f6",
+      "source_path": "binaries-esp32s3/adv",
+      "source_repo": "C5Lab/M5MonsterC5-CardputerADV",
+      "synced_at": "2026-07-13T08:22:47.590211+00:00"
+    },
+    "projectzero-c5": {
+      "files": {
+        "bootloader.bin": {
+          "downloaded_at": "2026-07-13T08:07:20.690082+00:00",
+          "github_sha": "9c772338f0668554f2b41a225deb7a2ded38ea69",
+          "sha256": "d6737afa67e9fd0510fc80fb19bb86827f4bd7797a74c14f92f37c648fe08a21",
+          "size": 19664,
+          "source_branch": "main",
+          "source_commit": "0fbc2209dd5e058c2d7d6dc870c9555e5e851eea",
+          "source_name": "bootloader.bin",
+          "source_path": "ESP32C5/binaries-esp32c5",
+          "source_repo": "C5Lab/projectZero"
+        },
+        "partition-table.bin": {
+          "downloaded_at": "2026-07-13T08:07:20.805236+00:00",
+          "github_sha": "dc175fedcbc504838c5b100390e7ba6dc93c85a8",
+          "sha256": "23dde662052a6acc2ed73494932a349b7c87102bce5987b9141fb7545578210c",
+          "size": 3072,
+          "source_branch": "main",
+          "source_commit": "0fbc2209dd5e058c2d7d6dc870c9555e5e851eea",
+          "source_name": "partition-table.bin",
+          "source_path": "ESP32C5/binaries-esp32c5",
+          "source_repo": "C5Lab/projectZero"
+        },
+        "projectZero.bin": {
+          "downloaded_at": "2026-07-13T08:07:21.263154+00:00",
+          "github_sha": "80fb5876571f78e078037666ace18a6030b9e95a",
+          "sha256": "b184201b10f5375fcc43ac918f5dd4aade562aae3c5be8063f6e2638f4a72ac7",
+          "size": 2229968,
+          "source_branch": "main",
+          "source_commit": "0fbc2209dd5e058c2d7d6dc870c9555e5e851eea",
+          "source_name": "projectZero.bin",
+          "source_path": "ESP32C5/binaries-esp32c5",
+          "source_repo": "C5Lab/projectZero"
+        }
+      },
+      "name": "projectZero ESP32-C5",
+      "source_branch": "main",
+      "source_commit": "0fbc2209dd5e058c2d7d6dc870c9555e5e851eea",
+      "source_path": "ESP32C5/binaries-esp32c5",
+      "source_repo": "C5Lab/projectZero",
+      "synced_at": "2026-07-13T08:22:43.801997+00:00"
+    },
+    "tab5": {
+      "files": {
+        "M5MonsterC5-Tab5.bin": {
+          "downloaded_at": "2026-07-13T08:23:14.232113+00:00",
+          "github_sha": "2e98a7955eeffba3bf96fd2408fa8b0d99bb20b3",
+          "sha256": "c375812ec5afa1efc19f0dcbfe53ae83ba27b675ba0d70c17228b6be683be08a",
+          "size": 4439392,
+          "source_branch": "main",
+          "source_commit": "07e545a351dd8bec4adce00e9e8b4a6b15f6093c",
+          "source_name": "M5MonsterC5-Tab5.bin",
+          "source_path": "binaries-esp32p4",
+          "source_repo": "C5Lab/M5MonsterC5-Tab5"
+        },
+        "bootloader.bin": {
+          "downloaded_at": "2026-07-13T08:23:00.441776+00:00",
+          "github_sha": "1baa0c46ed13c2f7755c30e0cea6a16054ea17c7",
+          "sha256": "edbd61b170a548d38bec924032053641a7ed2e340dee671654b4db5217068112",
+          "size": 23280,
+          "source_branch": "main",
+          "source_commit": "07e545a351dd8bec4adce00e9e8b4a6b15f6093c",
+          "source_name": "bootloader.bin",
+          "source_path": "binaries-esp32p4",
+          "source_repo": "C5Lab/M5MonsterC5-Tab5"
+        },
+        "partition-table.bin": {
+          "downloaded_at": "2026-07-13T08:23:06.733012+00:00",
+          "github_sha": "09c42d00d2869bcb4d5772561f9cb56d807cd12f",
+          "sha256": "97ce22d502aaae32ae3de440ee5de7dc4782501c4faca6a91aef0dfe90ad256c",
+          "size": 3072,
+          "source_branch": "main",
+          "source_commit": "07e545a351dd8bec4adce00e9e8b4a6b15f6093c",
+          "source_name": "partition-table.bin",
+          "source_path": "binaries-esp32p4",
+          "source_repo": "C5Lab/M5MonsterC5-Tab5"
+        }
+      },
+      "name": "M5MonsterC5 Tab5",
+      "source_branch": "main",
+      "source_commit": "07e545a351dd8bec4adce00e9e8b4a6b15f6093c",
+      "source_path": "binaries-esp32p4",
+      "source_repo": "C5Lab/M5MonsterC5-Tab5",
+      "synced_at": "2026-07-13T08:23:14.232552+00:00"
+    }
+  }
+}

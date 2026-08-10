@@ -1,0 +1,23 @@
+{
+  "name": "M5MonsterC5 Tab5",
+  "version": "latest",
+  "builds": [
+    {
+      "chipFamily": "ESP32-P4",
+      "parts": [
+        {
+          "path": "../firmware/tab5/bootloader.bin",
+          "offset": 8192
+        },
+        {
+          "path": "../firmware/tab5/partition-table.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/tab5/M5MonsterC5-Tab5.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

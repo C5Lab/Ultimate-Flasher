@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ultimate-lab5-flasher"
+version = "0.1.0"
+description = "Unified LAB5 firmware synchronizer and ESP flasher."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "esptool>=5.2.0",
+  "pyserial>=3.5",
+]
+
+[project.scripts]
+ultimate-lab5-flasher = "lab5_flasher.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["lab5_flasher*"]

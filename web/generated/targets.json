@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "title": "Ultimate LAB5 Web Flasher",
+  "targets": [
+    {
+      "id": "projectzero-c5",
+      "name": "projectZero ESP32-C5",
+      "family": "LAB5 boards",
+      "chip": "esp32c5",
+      "chip_family": "ESP32-C5",
+      "baud": 460800,
+      "manifest": "generated/manifests/projectzero-c5.json",
+      "firmware_files": [
+        {
+          "file": "bootloader.bin",
+          "path": "generated/firmware/projectzero-c5/bootloader.bin",
+          "size": 19664
+        },
+        {
+          "file": "partition-table.bin",
+          "path": "generated/firmware/projectzero-c5/partition-table.bin",
+          "size": 3072
+        },
+        {
+          "file": "projectZero.bin",
+          "path": "generated/firmware/projectzero-c5/projectZero.bin",
+          "size": 2229968
+        }
+      ],
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x2000",
+          "file": "bootloader.bin",
+          "optional": false
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table.bin",
+          "optional": false
+        },
+        {
+          "name": "app ota_0",
+          "offset": "0x20000",
+          "file": "projectZero.bin",
+          "optional": false
+        },
+        {
+          "name": "app ota_1 seed",
+          "offset": "0x410000",
+          "file": "projectZero.bin",
+          "optional": true
+        }
+      ],
+      "usb": []
+    },
+    {
+      "id": "cardputer-adv",
+      "name": "M5MonsterC5 Cardputer ADV",
+      "family": "Dedicated devices",
+      "chip": "esp32s3",
+      "chip_family": "ESP32-S3",
+      "baud": 460800,
+      "manifest": "generated/manifests/cardputer-adv.json",
+      "firmware_files": [
+        {
+          "file": "bootloader-adv.bin",
+          "path": "generated/firmware/cardputer-adv/bootloader-adv.bin",
+          "size": 22496
+        },
+        {
+          "file": "partition-table-adv.bin",
+          "path": "generated/firmware/cardputer-adv/partition-table-adv.bin",
+          "size": 3072
+        },
+        {
+          "file": "M5MonsterC5-CardputerADV-adv.bin",
+          "path": "generated/firmware/cardputer-adv/M5MonsterC5-CardputerADV-adv.bin",
+          "size": 548336
+        }
+      ],
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x0",
+          "file": "bootloader-adv.bin",
+          "optional": false
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table-adv.bin",
+          "optional": false
+        },
+        {
+          "name": "app",
+          "offset": "0x10000",
+          "file": "M5MonsterC5-CardputerADV-adv.bin",
+          "optional": false
+        }
+      ],
+      "usb": [
+        {
+          "usb_vendor_id": 12346,
+          "label": "Espressif USB/JTAG/serial device"
+        }
+      ]
+    },
+    {
+      "id": "tab5",
+      "name": "M5MonsterC5 Tab5",
+      "family": "Dedicated devices",
+      "chip": "esp32p4",
+      "chip_family": "ESP32-P4",
+      "baud": 460800,
+      "manifest": "generated/manifests/tab5.json",
+      "firmware_files": [
+        {
+          "file": "bootloader.bin",
+          "path": "generated/firmware/tab5/bootloader.bin",
+          "size": 23280
+        },
+        {
+          "file": "partition-table.bin",
+          "path": "generated/firmware/tab5/partition-table.bin",
+          "size": 3072
+        },
+        {
+          "file": "M5MonsterC5-Tab5.bin",
+          "path": "generated/firmware/tab5/M5MonsterC5-Tab5.bin",
+          "size": 4439392
+        }
+      ],
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x2000",
+          "file": "bootloader.bin",
+          "optional": false
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table.bin",
+          "optional": false
+        },
+        {
+          "name": "app",
+          "offset": "0x10000",
+          "file": "M5MonsterC5-Tab5.bin",
+          "optional": false
+        }
+      ],
+      "usb": []
+    }
+  ],
+  "packages": [
+    {
+      "id": "flipper-light",
+      "name": "Flipper Light App",
+      "family": "Flipper Zero",
+      "kind": "download",
+      "notes": "Flipper .fap package. It is downloaded and exposed in the web UI, not flashed through ESP WebSerial.",
+      "files": [
+        {
+          "file": "c5lab_dev.fap",
+          "label": "Download app",
+          "path": "generated/firmware/packages/flipper-light/c5lab_dev.fap",
+          "size": 71976
+        }
+      ]
+    }
+  ]
+}

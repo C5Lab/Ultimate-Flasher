@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "name": "Ultimate LAB5 Flasher Registry",
+  "targets": {
+    "projectzero-c5": {
+      "enabled": true,
+      "name": "projectZero ESP32-C5",
+      "family": "LAB5 boards",
+      "chip": "esp32c5",
+      "baud": 460800,
+      "flash_mode": "dio",
+      "flash_freq": "80m",
+      "flash_size": "detect",
+      "web": {
+        "chip_family": "ESP32-C5",
+        "usb": []
+      },
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/projectZero",
+        "branch": "main",
+        "path": "ESP32C5/binaries-esp32c5"
+      },
+      "reset": {
+        "before": "default-reset",
+        "after": "watchdog-reset",
+        "erase_after": "no_reset"
+      },
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x2000",
+          "file": "bootloader.bin"
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table.bin"
+        },
+        {
+          "name": "app ota_0",
+          "offset": "0x20000",
+          "file": "projectZero.bin"
+        },
+        {
+          "name": "app ota_1 seed",
+          "offset": "0x410000",
+          "file": "projectZero.bin",
+          "optional": true,
+          "enabled_by_default": true
+        }
+      ],
+      "extras": [
+        "README.md",
+        "flash_board.py",
+        "oui_wifi.bin"
+      ]
+    },
+    "cardputer-adv": {
+      "enabled": true,
+      "name": "M5MonsterC5 Cardputer ADV",
+      "family": "Dedicated devices",
+      "chip": "esp32s3",
+      "baud": 460800,
+      "flash_mode": "dio",
+      "flash_freq": "80m",
+      "flash_size": "detect",
+      "web": {
+        "chip_family": "ESP32-S3",
+        "usb": [
+          {
+            "usb_vendor_id": 12346,
+            "label": "Espressif USB/JTAG/serial device"
+          }
+        ]
+      },
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/M5MonsterC5-CardputerADV",
+        "branch": "main",
+        "path": "binaries-esp32s3/adv"
+      },
+      "reset": {
+        "before": "default_reset",
+        "after": "no_reset",
+        "erase_after": "no_reset"
+      },
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x0",
+          "file": "bootloader-adv.bin"
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table-adv.bin"
+        },
+        {
+          "name": "app",
+          "offset": "0x10000",
+          "file": "M5MonsterC5-CardputerADV-adv.bin"
+        }
+      ],
+      "extras": [
+        "flash_board.py",
+        "M5MonsterC5-CardputerADV-adv-full.bin"
+      ]
+    },
+    "tab5": {
+      "enabled": true,
+      "name": "M5MonsterC5 Tab5",
+      "family": "Dedicated devices",
+      "chip": "esp32p4",
+      "baud": 460800,
+      "flash_mode": "dio",
+      "flash_freq": "80m",
+      "flash_size": "16MB",
+      "web": {
+        "chip_family": "ESP32-P4",
+        "usb": []
+      },
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/M5MonsterC5-Tab5",
+        "branch": "main",
+        "path": "binaries-esp32p4"
+      },
+      "reset": {
+        "before": "default-reset",
+        "after": "hard-reset",
+        "erase_after": "no_reset"
+      },
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x2000",
+          "file": "bootloader.bin"
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x8000",
+          "file": "partition-table.bin"
+        },
+        {
+          "name": "app",
+          "offset": "0x10000",
+          "file": "M5MonsterC5-Tab5.bin"
+        }
+      ],
+      "extras": [
+        "flash_board.py",
+        "M5MonsterC5-Tab5-full.bin"
+      ]
+    },
+    "cores3": {
+      "enabled": false,
+      "name": "CoreS3",
+      "family": "Dedicated devices",
+      "chip": "esp32s3",
+      "baud": 460800,
+      "web": {
+        "chip_family": "ESP32-S3",
+        "usb": []
+      },
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/CoreS3",
+        "branch": "main",
+        "path": "binaries-esp32s3"
+      },
+      "flash": [],
+      "notes": "Template target. Enable after confirming file names/offsets or after giving this tool access to the private repo."
+    },
+    "mate": {
+      "enabled": false,
+      "name": "Mate",
+      "family": "Dedicated devices",
+      "chip": "esp32s3",
+      "baud": 460800,
+      "web": {
+        "chip_family": "ESP32-S3",
+        "usb": []
+      },
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/Mate",
+        "branch": "main",
+        "path": "binaries-esp32s3"
+      },
+      "flash": [],
+      "notes": "Template target. Enable after the private repo is available and file names/offsets are confirmed."
+    }
+  },
+  "packages": {
+    "flipper-light": {
+      "enabled": true,
+      "name": "Flipper Light App",
+      "family": "Flipper Zero",
+      "kind": "download",
+      "source": {
+        "type": "github",
+        "repo": "C5Lab/projectZero",
+        "branch": "main",
+        "path": "FlipperLight/dist"
+      },
+      "files": [
+        {
+          "file": "c5lab_dev.fap",
+          "label": "Download app"
+        }
+      ],
+      "notes": "Flipper .fap package. It is downloaded and exposed in the web UI, not flashed through ESP WebSerial."
+    }
+  }
+}

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate LAB5 Web Flasher</title>
+    <meta
+      name="description"
+      content="LAB5 web flasher for ESP32, ESP32-S3, ESP32-C5 and ESP32-P4 firmware."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='18' fill='%2311100f'/%3E%3Cpath d='M28 18v60h40' fill='none' stroke='%23ff2d86' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="masthead" aria-labelledby="title">
+        <div class="brand-row">
+          <img class="lab5-logo-img" src="assets/logo3.png" alt="LAB5 Control The Chaos" />
+        </div>
+        <h1 id="title">Ultimate Flasher</h1>
+        <p>Control the chaos. Flash LAB5 boards, dedicated devices and companion apps from one place.</p>
+      </section>
+
+      <section class="workspace" aria-label="Flashing workflow">
+        <article class="panel active" id="device-panel">
+          <div class="step">1</div>
+          <div class="panel-visual device-visual lab-port-visual" aria-hidden="true">
+            <svg class="mark-icon" viewBox="0 0 64 64">
+              <path d="M22 8v14" />
+              <path d="M42 8v14" />
+              <path d="M18 22h28v12a14 14 0 0 1-28 0Z" />
+              <path d="M32 48v8" />
+              <path d="M22 56h20" />
+            </svg>
+          </div>
+          <div class="panel-actions">
+            <button class="primary" id="connect-button" type="button">
+              Detect device
+            </button>
+            <button class="icon-button" id="refresh-button" type="button" title="Refresh firmware data">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 12a8 8 0 0 1-13.7 5.7" />
+                <path d="M4 12A8 8 0 0 1 17.7 6.3" />
+                <path d="M17 2v5h5" />
+                <path d="M7 22v-5H2" />
+              </svg>
+            </button>
+          </div>
+          <h2>DEVICE</h2>
+          <p id="device-status">
+            Connect over USB.
+          </p>
+        </article>
+
+        <article class="panel" id="firmware-panel">
+          <div class="step">2</div>
+          <div class="panel-visual folder-visual" aria-hidden="true">
+            <svg class="mark-icon" viewBox="0 0 64 64">
+              <path d="M10 18h16l6 7h22v23a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6Z" />
+              <path d="M32 31v14" />
+              <path d="m24 38 8 8 8-8" />
+            </svg>
+          </div>
+          <div class="panel-actions">
+            <select id="target-select" aria-label="Select firmware"></select>
+            <button class="icon-button" id="details-button" type="button" title="Firmware details">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                <path d="M14 2v6h6" />
+                <path d="M8 13h8" />
+                <path d="M8 17h8" />
+              </svg>
+            </button>
+          </div>
+          <h2>FIRMWARE</h2>
+          <p id="firmware-status">Select a build.</p>
+        </article>
+
+        <article class="panel" id="flash-panel">
+          <div class="step">3</div>
+          <div class="panel-visual bolt-visual" aria-hidden="true">
+            <svg class="mark-icon" viewBox="0 0 64 64">
+              <path d="M36 6 15 36h17l-5 22 22-34H32Z" />
+            </svg>
+          </div>
+          <div class="install-slot">
+            <esp-web-install-button id="install-button" disabled>
+              <button class="primary" slot="activate" type="button">Flash</button>
+              <span slot="unsupported">WebSerial is unavailable</span>
+              <span slot="not-allowed">HTTPS or localhost is required</span>
+            </esp-web-install-button>
+          </div>
+          <h2>FLASH</h2>
+          <p id="flash-status">
+            Ready when you are.
+          </p>
+        </article>
+      </section>
+
+      <section class="status-bar" aria-live="polite">
+        <div>
+          <span class="dot" id="support-dot"></span>
+          <span id="support-status">Checking WebSerial...</span>
+        </div>
+        <div id="summary-status">Loading firmware registry...</div>
+      </section>
+
+      <section class="downloads" id="downloads" hidden>
+        <div class="downloads-header">
+          <h2>APPS / DOWNLOADS</h2>
+        </div>
+        <div class="download-sections">
+          <div class="download-section">
+            <h3>Flipper App</h3>
+            <div class="download-grid" id="download-grid"></div>
+          </div>
+          <a class="download-section action-section" href="https://janosrf.neocities.org" target="_blank" rel="noreferrer">
+            <h3>Community job</h3>
+            <p>Community artwork, experiments, and LAB5 oddities.</p>
+            <span class="section-button">Try it</span>
+          </a>
+          <a class="download-section action-section" href="https://discord.gg/mTjqchwmGu" target="_blank" rel="noreferrer">
+            <h3>Discord</h3>
+            <p>Join the LAB5 crew and stay close to releases.</p>
+            <span class="section-button">Join server</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="details" id="details" hidden>
+        <h2>Selected Firmware Details</h2>
+        <pre id="details-output"></pre>
+      </section>
+    </main>
+  </body>
+</html>
