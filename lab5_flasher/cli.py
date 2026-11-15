@@ -31,6 +31,7 @@ from .registry import (
     package_items,
     target_items,
 )
+from .portable import detect_esp_chip, request_download_mode, require_compatible_chip
 from .web_export import WebExportError, export_web
 
 
@@ -211,6 +212,17 @@ def command_flash(args: argparse.Namespace) -> int:
     port = choose_port(args.port, timeout=args.wait_timeout)
     print(f"Detected serial port: {port}")
     print("Tip: release the BOOT button before programming finishes.")
+    request_download_mode(target, port, print)
+    detected_chip = detect_esp_chip(port)
+    require_compatible_chip(target, detected_chip)
+    print(f"Compatible chip confirmed: {detected_chip}")
+    if not args.yes:
+        if not sys.stdin.isatty():
+            raise FlashError("Flash confirmation requires an interactive terminal or explicit --yes.")
+        expected = f"FLASH {target_id}"
+        answer = input(f"Type '{expected}' to write {port}: ").strip()
+        if answer != expected:
+            raise FlashError("Flash cancelled; confirmation did not match.")
 
     if args.erase:
         erase_flash(target, port, baud)
@@ -286,6 +298,7 @@ def build_parser() -> argparse.ArgumentParser:
     flash_parser.add_argument("--flash-size", default=None)
     flash_parser.add_argument("--wait-timeout", type=float, default=20.0)
     flash_parser.add_argument("--no-reset", action="store_true", help="Do not issue RTS/DTR reset after flashing.")
+    flash_parser.add_argument("--yes", action="store_true", help="Confirm flash non-interactively after chip validation.")
     flash_parser.set_defaults(func=command_flash)
 
     return parser

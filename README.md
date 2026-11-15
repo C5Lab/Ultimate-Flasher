@@ -2,6 +2,10 @@
 
 A unified flasher for LAB5 firmware, dedicated ESP devices, and companion app packages.
 
+The repository also contains a native ARM64 application for M5Stack Cardputer Zero. See
+[`CardputerZero/README.md`](CardputerZero/README.md) for its APPLaunch package, USB Host workflow,
+managed firmware cache, keyboard controls, ESP compatibility checks, and Flipper Zero RPC backend.
+
 ## Core Idea
 
 The source firmware repositories remain the source of truth. This project keeps:
@@ -60,6 +64,7 @@ Current web export includes:
 - `cardputer-adv`
 - `tab5`
 - `flipper-light` as a downloadable `.fap` package
+- `monsterrf` / JanosRF from elpadrino26 with its original source and confirmed flash map
 
 ESP Web Tools handles chip-family matching during installation. Exact product
 matching, such as CoreS3 versus another ESP32-S3 board, needs `web.usb` rules or

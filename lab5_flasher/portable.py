@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import os
 import re
+import queue
 import signal
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 from .flasher import FlashError, build_flash_command
-from .github_sync import GitHubClient, SyncError
-from .registry import collect_artifacts, flash_entries, validate_target
+from .registry import flash_entries
 
 
 ProgressCallback = Callable[[str, float, str], None]
@@ -106,6 +105,7 @@ def _run_capture(command: list[str], timeout: float = 20.0) -> str:
 def detect_esp_chip(port: str) -> str:
     output = _run_capture(_esptool_command() + ["--port", port, "--chip", "auto", "chip-id"])
     patterns = (
+        r"Chip type:\s+(ESP32[-A-Za-z0-9]+)",
         r"Chip is\s+(ESP32[-A-Za-z0-9]+)",
         r"Detecting chip type\.\.\.\s*(ESP32[-A-Za-z0-9]+)",
     )
@@ -146,52 +146,13 @@ def _send_pre_flash_command(target: dict[str, Any], port: str, log: LogCallback)
         log(f"Download-mode command skipped/failed (continuing with ROM reset): {exc}")
 
 
-def _download_ephemeral(
-    target_id: str,
-    target: dict[str, Any],
-    destination: Path,
-    token: CancellationToken,
-    progress: ProgressCallback,
-    log: LogCallback,
-) -> str | None:
-    validate_target(target_id, target)
-    source = target["source"]
-    client = GitHubClient()
-    source_path = source["path"].strip("/")
-    commit_info = client.latest_commit_for_path(source["repo"], source["branch"], source_path)
-    ref = commit_info["sha"] if commit_info else source["branch"]
-    commit = commit_info["sha"] if commit_info else None
-    remote = {item["name"]: item for item in client.directory(source["repo"], ref, source_path)}
-    artifacts = collect_artifacts(target, include_extras=False)
-    total_bytes = sum(int(remote.get(item.source_name, {}).get("size", 0)) for item in artifacts)
-    completed = 0
-
-    for artifact in artifacts:
-        token.raise_if_cancelled()
-        info = remote.get(artifact.source_name)
-        if not info:
-            raise SyncError(f"Missing required firmware file: {artifact.source_name}")
-        size = int(info.get("size", 0))
-        log(f"Downloading {artifact.source_name} from {source['repo']} @ {ref[:12]}.")
-
-        def report(written: int, _total: int | None, *, base: int = completed, name: str = artifact.local_name) -> None:
-            fraction = (base + written) / total_bytes if total_bytes else 0.0
-            progress("download", min(1.0, fraction), name)
-
-        client.download_content(
-            source["repo"],
-            ref,
-            f"{source_path}/{artifact.source_name}",
-            destination / artifact.local_name,
-            progress=report,
-            cancelled=lambda: token.cancelled,
-        )
-        completed += size
-    progress("download", 1.0, "Firmware downloaded")
-    return commit
+def request_download_mode(target: dict[str, Any], port: str, log: LogCallback | None = None) -> None:
+    """Run a registry-declared, non-writing transition into ROM download mode."""
+    _send_pre_flash_command(target, port, log or (lambda _line: None))
 
 
 _PERCENT_RE = re.compile(r"(?:\(|\b)(\d{1,3})(?:\s*%|\s*percent)", re.IGNORECASE)
+_WRITE_ADDRESS_RE = re.compile(r"Writing at\s+(0x[0-9a-fA-F]+)")
 
 
 def _run_streaming(
@@ -200,6 +161,7 @@ def _run_streaming(
     stage: str,
     progress: ProgressCallback,
     log: LogCallback,
+    regions: list[tuple[int, int]] | None = None,
 ) -> None:
     process = subprocess.Popen(
         command,
@@ -210,8 +172,22 @@ def _run_streaming(
         start_new_session=True,
     )
     assert process.stdout is not None
+    output_queue: queue.Queue[str | None] = queue.Queue()
+
+    def read_output() -> None:
+        assert process.stdout is not None
+        try:
+            for output_line in iter(process.stdout.readline, ""):
+                output_queue.put(output_line)
+        finally:
+            output_queue.put(None)
+
+    reader = threading.Thread(target=read_output, daemon=True)
+    reader.start()
+    return_code: int | None = None
     try:
-        for raw in iter(process.stdout.readline, ""):
+        stream_finished = False
+        while not stream_finished:
             if token.cancelled:
                 os.killpg(process.pid, signal.SIGTERM)
                 try:
@@ -219,11 +195,32 @@ def _run_streaming(
                 except subprocess.TimeoutExpired:
                     os.killpg(process.pid, signal.SIGKILL)
                 raise OperationCancelled("Operation cancelled by user.")
+            try:
+                raw = output_queue.get(timeout=0.1)
+            except queue.Empty:
+                if process.poll() is not None:
+                    stream_finished = True
+                continue
+            if raw is None:
+                stream_finished = True
+                continue
             line = raw.strip("\r\n")
             if line:
                 log(line)
             matches = _PERCENT_RE.findall(line)
-            if matches:
+            address_match = _WRITE_ADDRESS_RE.search(line)
+            if address_match and regions:
+                address = int(address_match.group(1), 16)
+                total_size = sum(size for _, size in regions)
+                completed_before = 0
+                for start, size in regions:
+                    if start <= address <= start + size + 4096:
+                        written = max(0, min(size, address - start))
+                        fraction = (completed_before + written) / total_size if total_size else 0.0
+                        progress(stage, min(1.0, fraction), line)
+                        break
+                    completed_before += size
+            elif matches:
                 progress(stage, min(1.0, int(matches[-1]) / 100.0), line)
         return_code = process.wait()
     finally:
@@ -241,6 +238,9 @@ def _verify_command(target: dict[str, Any], port: str, base: Path, include_optio
         "--after", target.get("reset", {}).get("after", "hard-reset"),
         "--chip", target["chip"],
         "verify-flash",
+        "--flash-mode", target.get("flash_mode", "dio"),
+        "--flash-freq", target.get("flash_freq", "80m"),
+        "--flash-size", target.get("flash_size", "detect"),
     ]
     for entry in flash_entries(target, include_optional=include_optional):
         command.extend([entry["offset"], str(base / entry["file"])])
@@ -257,6 +257,7 @@ def flash_ephemeral_target(
     progress: ProgressCallback | None = None,
     log: LogCallback | None = None,
     include_optional: bool = True,
+    cache_root: Path | None = None,
 ) -> FlashResult:
     if not confirmed:
         raise FlashError("Explicit user confirmation is required before writing flash.")
@@ -274,32 +275,57 @@ def flash_ephemeral_target(
     require_compatible_chip(target, detected)
     progress("detect", 1.0, f"Compatible {detected}")
 
-    with tempfile.TemporaryDirectory(prefix=f"ultimate-flasher-{target_id}-") as temp_name:
-        base = Path(temp_name)
-        commit = _download_ephemeral(target_id, target, base, token, progress, log)
-        token.raise_if_cancelled()
-        command = build_flash_command(
-            target_id,
-            target,
-            port,
-            int(target.get("baud", 460800)),
-            flash_mode=target.get("flash_mode", "dio"),
-            flash_freq=target.get("flash_freq", "80m"),
-            flash_size=target.get("flash_size", "detect"),
-            include_optional=include_optional,
-            base_dir=base,
-        )
-        _run_streaming(command, token, "flash", progress, log)
-        token.raise_if_cancelled()
-        _run_streaming(_verify_command(target, port, base, include_optional), token, "verify", progress, log)
-        # TemporaryDirectory removes the binaries only after verification returned successfully.
-        return FlashResult(target_id, port, detected, commit)
+    from .device_cache import prepare_target_cache
+
+    prepared = prepare_target_cache(target_id, target, token, progress, log, cache_root)
+    base = prepared.directory
+    token.raise_if_cancelled()
+    command = build_flash_command(
+        target_id,
+        target,
+        port,
+        int(target.get("baud", 460800)),
+        flash_mode=target.get("flash_mode", "dio"),
+        flash_freq=target.get("flash_freq", "80m"),
+        flash_size=target.get("flash_size", "detect"),
+        include_optional=include_optional,
+        base_dir=base,
+    )
+    regions = [
+        (int(str(entry["offset"]), 0), (base / entry["file"]).stat().st_size)
+        for entry in flash_entries(target, include_optional=include_optional)
+    ]
+    _run_streaming(command, token, "flash", progress, log, regions=regions)
+    token.raise_if_cancelled()
+    _run_streaming(_verify_command(target, port, base, include_optional), token, "verify", progress, log)
+    return FlashResult(target_id, port, detected, prepared.commit)
+
+
+# Kept as the public name used by the CardputerZero UI; artifacts are now cached and updated atomically.
+flash_cached_target = flash_ephemeral_target
 
 
 def usb_host_diagnostics() -> list[tuple[str, bool, str]]:
     checks: list[tuple[str, bool, str]] = []
     usb_root = Path("/sys/bus/usb/devices")
     checks.append(("USB host controller", usb_root.exists(), str(usb_root)))
+    role_files = list(Path("/sys/class/usb_role").glob("*/role"))
+    if role_files:
+        roles = []
+        for role_file in role_files:
+            try:
+                roles.append(role_file.read_text(encoding="utf-8").strip().lower())
+            except OSError:
+                roles.append("unreadable")
+        checks.append(("USB role", "host" in roles, ", ".join(roles)))
+    else:
+        checks.append(
+            (
+                "USB role",
+                usb_root.exists(),
+                "role sysfs unavailable; verify the physical Host switch",
+            )
+        )
     checks.append(("Python architecture", sys.maxsize > 2**32, "64-bit" if sys.maxsize > 2**32 else "32-bit"))
     try:
         import esptool

@@ -1,0 +1,9 @@
+# Espressif native USB/JTAG/serial (VID used by ESP32-S3/C5/P4 devices)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", TAG+="uaccess", GROUP="dialout", MODE="0660"
+
+# Common CP210x and CH34x USB-UART bridges
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="10c4", TAG+="uaccess", GROUP="dialout", MODE="0660"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1a86", TAG+="uaccess", GROUP="dialout", MODE="0660"
+
+# Official Flipper Zero USB CDC rule (0483:5740)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", ATTRS{manufacturer}=="Flipper Devices Inc.", TAG+="uaccess", GROUP="dialout", MODE="0660"

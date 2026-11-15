@@ -4,7 +4,7 @@
   "targets": {
     "projectzero-c5": {
       "enabled": true,
-      "name": "projectZero ESP32-C5",
+      "name": "projectZero / JanOS ESP32-C5",
       "family": "LAB5 boards",
       "menu_group": "LAB5 GEAR",
       "chip": "esp32c5",
@@ -263,7 +263,7 @@
       "kind": "download",
       "menu_group": "FLIPPER ZERO",
       "transport": "flipper-rpc",
-      "install_path": "/ext/apps/Tools/c5lab_dev.fap",
+      "install_path": "/ext/apps/GPIO/c5lab_dev.fap",
       "usb": [
         {
           "usb_vendor_id": 1155,
