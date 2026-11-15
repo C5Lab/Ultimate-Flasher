@@ -6,6 +6,7 @@
       "enabled": true,
       "name": "projectZero ESP32-C5",
       "family": "LAB5 boards",
+      "menu_group": "LAB5 GEAR",
       "chip": "esp32c5",
       "baud": 460800,
       "flash_mode": "dio",
@@ -56,10 +57,69 @@
         "oui_wifi.bin"
       ]
     },
+    "monsterrf": {
+      "enabled": true,
+      "name": "MonsterRF / JanosRF",
+      "family": "LAB5 GEAR",
+      "menu_group": "LAB5 GEAR",
+      "chip": "esp32c5",
+      "baud": 460800,
+      "flash_mode": "dio",
+      "flash_freq": "80m",
+      "flash_size": "8MB",
+      "author": "elpadrino26 (El Padrino)",
+      "homepage": "https://elpadrino26.github.io/janosrf-web-flasher/",
+      "web": {
+        "chip_family": "ESP32-C5",
+        "usb": []
+      },
+      "source": {
+        "type": "github",
+        "repo": "elpadrino26/janosrf-web-flasher",
+        "branch": "main",
+        "path": "latest",
+        "original_flasher": "https://github.com/elpadrino26/janosrf-web-flasher"
+      },
+      "pre_flash": {
+        "serial_command": "download\n",
+        "baud": 115200,
+        "delay_seconds": 1.0,
+        "best_effort": true
+      },
+      "reset": {
+        "before": "default-reset",
+        "after": "hard-reset",
+        "erase_after": "no_reset"
+      },
+      "flash": [
+        {
+          "name": "bootloader",
+          "offset": "0x2000",
+          "file": "bootloader.bin"
+        },
+        {
+          "name": "partition-table",
+          "offset": "0x10000",
+          "file": "partition-table.bin"
+        },
+        {
+          "name": "app ota_0",
+          "offset": "0x20000",
+          "file": "projectZero.bin"
+        },
+        {
+          "name": "app ota_1 seed",
+          "offset": "0x410000",
+          "file": "projectZero.bin"
+        }
+      ],
+      "notes": "Original JanosRF/MonsterRF release and installation map by elpadrino26. The same app image is written to both OTA slots, exactly as in the original flasher."
+    },
     "cardputer-adv": {
       "enabled": true,
       "name": "M5MonsterC5 Cardputer ADV",
       "family": "Dedicated devices",
+      "menu_group": "M5 DEVICES",
       "chip": "esp32s3",
       "baud": 460800,
       "flash_mode": "dio",
@@ -111,6 +171,7 @@
       "enabled": true,
       "name": "M5MonsterC5 Tab5",
       "family": "Dedicated devices",
+      "menu_group": "M5 DEVICES",
       "chip": "esp32p4",
       "baud": 460800,
       "flash_mode": "dio",
@@ -157,6 +218,7 @@
       "enabled": false,
       "name": "CoreS3",
       "family": "Dedicated devices",
+      "menu_group": "M5 DEVICES",
       "chip": "esp32s3",
       "baud": 460800,
       "web": {
@@ -176,6 +238,7 @@
       "enabled": false,
       "name": "Mate",
       "family": "Dedicated devices",
+      "menu_group": "M5 DEVICES",
       "chip": "esp32s3",
       "baud": 460800,
       "web": {
@@ -198,6 +261,16 @@
       "name": "Flipper Light App",
       "family": "Flipper Zero",
       "kind": "download",
+      "menu_group": "FLIPPER ZERO",
+      "transport": "flipper-rpc",
+      "install_path": "/ext/apps/Tools/c5lab_dev.fap",
+      "usb": [
+        {
+          "usb_vendor_id": 1155,
+          "usb_product_id": 22336,
+          "label": "Flipper Zero USB CDC"
+        }
+      ],
       "source": {
         "type": "github",
         "repo": "C5Lab/projectZero",

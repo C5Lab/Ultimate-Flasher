@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .paths import FIRMWARE_DIR, METADATA_FILE
 from .registry import Artifact, RegistryError, collect_artifacts, validate_package, validate_target
@@ -79,14 +79,49 @@ class GitHubClient:
             raise SyncError(f"GitHub path is not a directory: {repo}/{path}")
         return data
 
-    def download_content(self, repo: str, ref: str, full_path: str, destination: Path) -> None:
+    def download_content(
+        self,
+        repo: str,
+        ref: str,
+        full_path: str,
+        destination: Path,
+        *,
+        progress: Callable[[int, int | None], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> None:
         encoded_path = urllib.parse.quote(full_path.strip("/"), safe="/")
         query = urllib.parse.urlencode({"ref": ref})
         url = f"https://api.github.com/repos/{repo}/contents/{encoded_path}?{query}"
-        data = self.request(url, accept="application/vnd.github.raw")
+        headers = dict(self.base_headers)
+        headers["Accept"] = "application/vnd.github.raw"
+        request = urllib.request.Request(url, headers=headers)
         destination.parent.mkdir(parents=True, exist_ok=True)
         tmp = destination.with_suffix(destination.suffix + ".part")
-        tmp.write_bytes(data)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response, tmp.open("wb") as handle:
+                total_header = response.headers.get("Content-Length")
+                total = int(total_header) if total_header and total_header.isdigit() else None
+                written = 0
+                while True:
+                    if cancelled and cancelled():
+                        raise SyncError("Download cancelled.")
+                    chunk = response.read(64 * 1024)
+                    if not chunk:
+                        break
+                    handle.write(chunk)
+                    written += len(chunk)
+                    if progress:
+                        progress(written, total)
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            tmp.unlink(missing_ok=True)
+            raise SyncError(f"GitHub request failed ({exc.code}) for {url}: {body}") from exc
+        except urllib.error.URLError as exc:
+            tmp.unlink(missing_ok=True)
+            raise SyncError(f"GitHub request failed for {url}: {exc}") from exc
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
         tmp.replace(destination)
 
 

@@ -114,8 +114,9 @@ def build_flash_command(
     flash_freq: str,
     flash_size: str,
     include_optional: bool,
+    base_dir: Path | None = None,
 ) -> list[str]:
-    base = target_dir(target_id)
+    base = base_dir or target_dir(target_id)
     entries = flash_entries(target, include_optional=include_optional)
     if not entries:
         raise FlashError(f"Target '{target_id}' has no flash entries.")
