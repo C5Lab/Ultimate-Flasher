@@ -25,6 +25,17 @@ cp "$REPO/CardputerZero/__init__.py" "$REPO/CardputerZero/__main__.py" \
     "$REPO/CardputerZero/app.py" "$REPO/CardputerZero/platform_io.py" \
     "$REPO/CardputerZero/ui.py" "$APP_ROOT/CardputerZero/"
 cp -R "$REPO/CardputerZero/assets" "$APP_ROOT/CardputerZero/assets"
+python3 - "$APP_ROOT/CardputerZero/assets/intro_uf.png" <<'PY'
+import sys
+from pathlib import Path
+from PIL import Image, ImageOps
+
+path = Path(sys.argv[1])
+if path.exists():
+    image = Image.open(path).convert("RGB")
+    image = ImageOps.contain(image, (320, 170), Image.Resampling.LANCZOS)
+    image.save(path, optimize=True)
+PY
 mkdir -p "$APP_ROOT/CardputerZero/anime"
 python3 - "$REPO/CardputerZero/anime" "$APP_ROOT/CardputerZero/anime" <<'PY'
 import sys

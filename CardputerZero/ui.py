@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 from .platform_io import HEIGHT, WIDTH, font
 
@@ -32,6 +32,25 @@ F15B = font(15, True)
 F19B = font(19, True)
 
 ANIMATION_SIZE = (150, 100)
+
+
+@lru_cache(maxsize=1)
+def intro_screen() -> Image.Image:
+    path = Path(__file__).resolve().parent / "assets" / "intro_uf.png"
+    if not path.exists():
+        image, draw = base("ULTIMATE FLASHER")
+        draw.text((WIDTH // 2, HEIGHT // 2), "LAB5", font=F19B, fill=WHITE, anchor="mm")
+        return image
+    try:
+        with Image.open(path) as source:
+            intro = ImageOps.contain(source.convert("RGB"), (WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+    except (OSError, ValueError):
+        image, draw = base("ULTIMATE FLASHER")
+        draw.text((WIDTH // 2, HEIGHT // 2), "LAB5", font=F19B, fill=WHITE, anchor="mm")
+        return image
+    canvas = Image.new("RGB", (WIDTH, HEIGHT), (9, 4, 20))
+    canvas.paste(intro, ((WIDTH - intro.width) // 2, (HEIGHT - intro.height) // 2))
+    return canvas
 
 
 @lru_cache(maxsize=1)

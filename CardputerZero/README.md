@@ -7,6 +7,7 @@ It is a real USB flasher, not a UI-only demonstration.
 
 - APPLaunch `.desktop` integration and ARM64 `.deb` packaging;
 - direct RGB565 framebuffer rendering and exclusive evdev keyboard input;
+- a 2.5-second, skippable startup intro loaded from `assets/intro_uf.png`;
 - LAB5 GEAR, M5 DEVICES, FLIPPER ZERO and SETTINGS menus;
 - all targets come from the shared `registry/firmware.json` file;
 - incomplete targets remain visible but cannot be selected for flashing;

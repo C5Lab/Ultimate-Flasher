@@ -29,6 +29,7 @@ from .platform_io import BACK_KEYS, DOWN_KEYS, Keyboard, OK_KEYS, Screen, UP_KEY
 
 
 GROUPS = ("LAB5 GEAR", "M5 DEVICES", "FLIPPER ZERO", "SETTINGS")
+INTRO_SECONDS = 2.5
 STAGE_RANGES = {
     "detect": (0.0, 5.0),
     "download": (5.0, 25.0),
@@ -41,7 +42,8 @@ STAGE_RANGES = {
 class UltimateFlasherApp:
     def __init__(self) -> None:
         self.registry = load_registry()
-        self.screen = "groups"
+        self.screen = "intro"
+        self.intro_until = time.monotonic() + INTRO_SECONDS
         self.selected = 0
         self.group = ""
         self.item_id = ""
@@ -255,6 +257,9 @@ class UltimateFlasherApp:
                 self.screen = "result"
 
     def on_key(self, code: int) -> bool:
+        if self.screen == "intro":
+            self.screen = "groups"
+            return True
         if self.screen == "operation":
             if code in BACK_KEYS and self.token:
                 self.token.cancel()
@@ -305,6 +310,10 @@ class UltimateFlasherApp:
 
     def draw(self) -> Image.Image:
         self._drain_events()
+        if self.screen == "intro":
+            if time.monotonic() < self.intro_until:
+                return ui.intro_screen()
+            self.screen = "groups"
         if self.screen == "groups":
             return ui.menu("ULTIMATE FLASHER", self.entries, self.selected, "LAB5")
         if self.screen in {"items", "settings", "ports"}:
