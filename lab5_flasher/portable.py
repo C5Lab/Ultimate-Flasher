@@ -83,8 +83,36 @@ def serial_devices() -> list[SerialDevice]:
     return sorted(devices, key=lambda item: item.port)
 
 
+def usb_serial_devices() -> list[SerialDevice]:
+    """Return only serial ports backed by a USB device, never SoC UARTs like ttyS0."""
+    return [item for item in serial_devices() if item.vid is not None and item.pid is not None]
+
+
 def _normalise_chip(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+_ESP_CHIP_FAMILIES = (
+    "esp32p4",
+    "esp32c6",
+    "esp32c5",
+    "esp32c3",
+    "esp32c2",
+    "esp32h4",
+    "esp32h2",
+    "esp32s3",
+    "esp32s2",
+    "esp32",
+)
+
+
+def _canonical_chip(value: str) -> str:
+    """Reduce esptool package/memory variants (for example C5HR8) to a chip family."""
+    normalised = _normalise_chip(value)
+    for family in _ESP_CHIP_FAMILIES:
+        if normalised.startswith(family):
+            return family
+    return normalised
 
 
 def _esptool_command() -> list[str]:
@@ -117,8 +145,8 @@ def detect_esp_chip(port: str) -> str:
 
 
 def require_compatible_chip(target: dict[str, Any], detected_chip: str) -> None:
-    expected = _normalise_chip(str(target["chip"]))
-    actual = _normalise_chip(detected_chip)
+    expected = _canonical_chip(str(target["chip"]))
+    actual = _canonical_chip(detected_chip)
     if actual != expected:
         raise IncompatibleDevice(
             f"Incompatible chip: firmware requires {target['chip']}, device reports {detected_chip}."
@@ -153,6 +181,14 @@ def request_download_mode(target: dict[str, Any], port: str, log: LogCallback | 
 
 _PERCENT_RE = re.compile(r"(?:\(|\b)(\d{1,3})(?:\s*%|\s*percent)", re.IGNORECASE)
 _WRITE_ADDRESS_RE = re.compile(r"Writing at\s+(0x[0-9a-fA-F]+)")
+_VERIFY_SUCCESS_RE = re.compile(
+    r"(?:hash of data verified|verified successfully|flash verified)",
+    re.IGNORECASE,
+)
+
+
+def _is_expected_post_verify_reset(return_code: int | None, stage: str, verified: bool) -> bool:
+    return return_code == 2 and stage == "verify" and verified
 
 
 def _run_streaming(
@@ -185,6 +221,7 @@ def _run_streaming(
     reader = threading.Thread(target=read_output, daemon=True)
     reader.start()
     return_code: int | None = None
+    verification_succeeded = False
     try:
         stream_finished = False
         while not stream_finished:
@@ -207,6 +244,8 @@ def _run_streaming(
             line = raw.strip("\r\n")
             if line:
                 log(line)
+                if stage == "verify" and _VERIFY_SUCCESS_RE.search(line):
+                    verification_succeeded = True
             matches = _PERCENT_RE.findall(line)
             address_match = _WRITE_ADDRESS_RE.search(line)
             if address_match and regions:
@@ -225,7 +264,9 @@ def _run_streaming(
         return_code = process.wait()
     finally:
         process.stdout.close()
-    if return_code != 0:
+    if _is_expected_post_verify_reset(return_code, stage, verification_succeeded):
+        log("Verification completed; ignoring expected code 2 after hard reset.")
+    elif return_code != 0:
         raise FlashError(f"esptool {stage} failed with code {return_code}; check USB connection and log.")
     progress(stage, 1.0, f"{stage.title()} complete")
 
@@ -339,7 +380,7 @@ def usb_host_diagnostics() -> list[tuple[str, bool, str]]:
         checks.append(("pyserial", True, getattr(serial, "VERSION", "installed")))
     except ImportError:
         checks.append(("pyserial", False, "not installed"))
-    ports = serial_devices() if checks[-1][1] else []
+    ports = usb_serial_devices() if checks[-1][1] else []
     checks.append(("USB serial ports", bool(ports), f"{len(ports)} detected"))
     denied = [item.port for item in ports if not (item.readable and item.writable)]
     checks.append(("Serial permissions", not denied, ", ".join(denied) if denied else "read/write OK"))

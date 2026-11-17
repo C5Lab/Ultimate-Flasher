@@ -24,6 +24,7 @@ mkdir -p "$APP_ROOT/CardputerZero"
 cp "$REPO/CardputerZero/__init__.py" "$REPO/CardputerZero/__main__.py" \
     "$REPO/CardputerZero/app.py" "$REPO/CardputerZero/platform_io.py" \
     "$REPO/CardputerZero/ui.py" "$APP_ROOT/CardputerZero/"
+cp "$REPO/CardputerZero/VERSION" "$APP_ROOT/CardputerZero/VERSION"
 cp -R "$REPO/CardputerZero/assets" "$APP_ROOT/CardputerZero/assets"
 python3 - "$APP_ROOT/CardputerZero/assets/intro_uf.png" <<'PY'
 import sys
@@ -48,7 +49,7 @@ for name in ("base.png", "body.png", "left_hand.png", "right_hand.png"):
     if not path.exists():
         continue
     image = Image.open(path).convert("RGBA")
-    image.resize((150, 100), Image.Resampling.LANCZOS).save(destination / name, optimize=True)
+    image.resize((210, 140), Image.Resampling.LANCZOS).save(destination / name, optimize=True)
 PY
 cp -R "$REPO/lab5_flasher" "$APP_ROOT/lab5_flasher"
 cp -R "$REPO/registry" "$APP_ROOT/registry"
@@ -94,9 +95,10 @@ import sys
 from PIL import Image
 
 image = Image.open(sys.argv[1]).convert("RGBA")
-image.thumbnail((64, 64), Image.Resampling.LANCZOS)
-canvas = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-canvas.alpha_composite(image, ((64 - image.width) // 2, (64 - image.height) // 2))
+icon_size = 256
+image.thumbnail((icon_size, icon_size), Image.Resampling.LANCZOS)
+canvas = Image.new("RGBA", (icon_size, icon_size), (0, 0, 0, 0))
+canvas.alpha_composite(image, ((icon_size - image.width) // 2, (icon_size - image.height) // 2))
 canvas.save(sys.argv[2])
 PY
 
@@ -107,7 +109,7 @@ Package: ultimate-flasher-cardputerzero
 Version: $VERSION
 Architecture: arm64
 Maintainer: C5Lab
-Depends: python3 (>= 3.10), python3-numpy, python3-pil
+Depends: python3 (>= 3.10), python3-numpy, python3-pil, python3-qrcode
 Section: utils
 Priority: optional
 Description: Native LAB5 Ultimate Flasher for M5Stack Cardputer Zero

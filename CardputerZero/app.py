@@ -10,7 +10,6 @@ from typing import Any
 
 from PIL import Image
 
-from lab5_flasher.device_cache import default_cache_root
 from lab5_flasher.flipper import FLIPPER_PID, FLIPPER_VID, install_fap_cached
 from lab5_flasher.portable import (
     CancellationToken,
@@ -19,16 +18,16 @@ from lab5_flasher.portable import (
     flash_cached_target,
     request_download_mode,
     require_compatible_chip,
-    serial_devices,
-    usb_host_diagnostics,
+    usb_serial_devices,
 )
 from lab5_flasher.registry import load_registry
 
 from . import ui
-from .platform_io import BACK_KEYS, DOWN_KEYS, Keyboard, OK_KEYS, Screen, UP_KEYS
+from .platform_io import BACK_KEYS, DOWN_KEYS, KEY_Q, LEFT_KEYS, Keyboard, OK_KEYS, RIGHT_KEYS, Screen, UP_KEYS, set_brightness
 
 
 GROUPS = ("LAB5 GEAR", "M5 DEVICES", "FLIPPER ZERO", "SETTINGS")
+SCREEN_TIMEOUTS = (5, 30, 60)
 INTRO_SECONDS = 2.5
 STAGE_RANGES = {
     "detect": (0.0, 5.0),
@@ -61,15 +60,19 @@ class UltimateFlasherApp:
         self.events: queue.Queue[tuple[str, Any]] = queue.Queue()
         self.token: CancellationToken | None = None
         self.worker: threading.Thread | None = None
+        self.serial_stop = threading.Event()
+        self.last_input = time.monotonic()
+        self.screen_blanked = False
         self.settings_path = Path.home() / ".config" / "ultimate-flasher" / "settings.json"
         self.settings = self._load_settings()
+        set_brightness(int(self.settings["brightness"]))
         self._set_group_entries()
 
     def _load_settings(self) -> dict[str, Any]:
         try:
-            return {"include_optional": True, **json.loads(self.settings_path.read_text(encoding="utf-8"))}
+            return {"include_optional": True, "brightness": 80, "screen_timeout": 30, **json.loads(self.settings_path.read_text(encoding="utf-8"))}
         except (OSError, json.JSONDecodeError):
-            return {"include_optional": True}
+            return {"include_optional": True, "brightness": 80, "screen_timeout": 30}
 
     def _save_settings(self) -> None:
         self.settings_path.parent.mkdir(parents=True, exist_ok=True)
@@ -87,10 +90,9 @@ class UltimateFlasherApp:
         if group == "SETTINGS":
             self.screen = "settings"
             self.entries = [
-                {"label": "USB DIAGNOSTICS"},
-                {"label": "APP INFO"},
-                {"label": "CACHE INFO"},
-                {"label": "OPTIONAL OTA", "status": "ON" if self.settings["include_optional"] else "OFF"},
+                {"label": "SERIAL"},
+                {"label": "SCREEN"},
+                {"label": "ABOUT"},
             ]
             return
         self.screen = "items"
@@ -121,7 +123,7 @@ class UltimateFlasherApp:
 
     def _ports(self) -> list[dict[str, Any]]:
         entries = []
-        for device in serial_devices():
+        for device in usb_serial_devices():
             status = "OK" if device.readable and device.writable else "NO PERM"
             entries.append({"label": device.port, "status": status, "device": device})
         return entries
@@ -131,7 +133,7 @@ class UltimateFlasherApp:
         self.selected = 0
         if not self.entries:
             self.result_ok = False
-            self.result_text = "Brak portów USB serial. Sprawdź tryb USB Host, kabel i zasilanie."
+            self.result_text = "No USB serial ports found. Check USB Host mode, cable, and power."
             self.screen = "result"
         else:
             self.screen = "ports"
@@ -140,19 +142,19 @@ class UltimateFlasherApp:
         device = self.entries[self.selected]["device"]
         if not (device.readable and device.writable):
             self.result_ok = False
-            self.result_text = f"Brak uprawnień R/W dla {device.port}."
+            self.result_text = f"No read/write permission for {device.port}."
             self.screen = "result"
             return
         self.port = device.port
         self.screen = "operation"
-        self.progress, self.phase, self.label = 0.0, "detect", "Sprawdzanie urządzenia USB"
+        self.progress, self.phase, self.label = 0.0, "detect", "Checking USB device"
         self.token = CancellationToken()
 
         def probe() -> None:
             try:
                 if self.kind == "package":
                     if device.vid != FLIPPER_VID or device.pid != FLIPPER_PID:
-                        raise IncompatibleDevice("To nie jest Flipper Zero USB CDC (0483:5740).")
+                        raise IncompatibleDevice("This is not a Flipper Zero USB CDC device (0483:5740).")
                     detected = "Flipper Zero"
                 else:
                     request_download_mode(self.item, self.port, lambda line: self.events.put(("log", line)))
@@ -170,7 +172,7 @@ class UltimateFlasherApp:
 
     def _start_operation(self) -> None:
         self.screen = "operation"
-        self.progress, self.phase, self.label = 0.0, "download", "Sprawdzanie aktualizacji"
+        self.progress, self.phase, self.label = 0.0, "download", "Checking for updates"
         self.token = CancellationToken()
 
         def on_progress(stage: str, fraction: float, label: str) -> None:
@@ -212,25 +214,47 @@ class UltimateFlasherApp:
 
     def _settings_action(self) -> None:
         if self.selected == 0:
-            diagnostics = usb_host_diagnostics()
-            lines = [f"{'OK' if ok else 'FAIL'} {name}: {detail}" for name, ok, detail in diagnostics]
-            self.result_ok = all(ok for _, ok, _ in diagnostics[:4])
-            self.result_text = " | ".join(lines)
-            self.screen = "result"
+            self.entries = self._ports()
+            self.selected = 0
+            if self.entries:
+                self.screen = "serial_ports"
+            else:
+                self.result_ok = False
+                self.result_text = "No USB serial device found."
+                self.screen = "result"
         elif self.selected == 1:
-            self.result_ok = True
-            self.result_text = "Ultimate Flasher Cardputer Zero 0.2. LAB5. Python + framebuffer + esptool."
-            self.screen = "result"
-        elif self.selected == 2:
-            cache = default_cache_root()
-            size = sum(path.stat().st_size for path in cache.rglob("*") if path.is_file()) if cache.exists() else 0
-            self.result_ok = True
-            self.result_text = f"Cache: {cache} ({size / 1024 / 1024:.1f} MiB). Pliki są aktualizowane atomowo."
-            self.screen = "result"
+            self.selected = 0
+            self.screen = "screen_settings"
         else:
-            self.settings["include_optional"] = not self.settings["include_optional"]
-            self._save_settings()
-            self.entries[self.selected]["status"] = "ON" if self.settings["include_optional"] else "OFF"
+            self.screen = "about"
+
+    def _start_serial_console(self) -> None:
+        self.port = self.entries[self.selected]["device"].port
+        self.logs = []
+        self.serial_stop.clear()
+        self.screen = "serial_console"
+
+        def read_serial() -> None:
+            try:
+                import serial
+
+                with serial.Serial(self.port, 115200, timeout=0.2) as connection:
+                    while not self.serial_stop.is_set():
+                        raw = connection.readline()
+                        if raw:
+                            self.events.put(("serial_line", raw.decode("utf-8", errors="replace").rstrip()))
+            except Exception as exc:
+                if not self.serial_stop.is_set():
+                    self.events.put(("serial_line", f"[serial error] {exc}"))
+
+        self.worker = threading.Thread(target=read_serial, daemon=True)
+        self.worker.start()
+
+    def _version(self) -> str:
+        try:
+            return (Path(__file__).resolve().parent / "VERSION").read_text(encoding="utf-8").strip()
+        except OSError:
+            return "0.2.0"
 
     def _drain_events(self) -> None:
         while True:
@@ -243,13 +267,18 @@ class UltimateFlasherApp:
             elif name == "log":
                 self.logs.append(str(payload))
                 self.logs = self.logs[-100:]
+            elif name == "serial_line":
+                self.logs.append(str(payload))
+                self.logs = self.logs[-100:]
             elif name == "probe_ok":
                 self.detected = str(payload)
                 self.screen = "confirm"
             elif name == "complete":
                 self.result_ok = True
-                commit = payload.source_commit[:12] if payload.source_commit else "branch"
-                self.result_text = f"Zakończono i zweryfikowano. Źródło {commit}. Firmware pozostaje w cache."
+                self.result_text = (
+                    "Flash verified. Welcome to LAB5 — where hard resets have a soft landing! "
+                    "Firmware saved in cache."
+                )
                 self.screen = "result"
             elif name == "failed":
                 self.result_ok = False
@@ -257,6 +286,11 @@ class UltimateFlasherApp:
                 self.screen = "result"
 
     def on_key(self, code: int) -> bool:
+        self.last_input = time.monotonic()
+        if self.screen_blanked:
+            self.screen_blanked = False
+            set_brightness(int(self.settings["brightness"]))
+            return True
         if self.screen == "intro":
             self.screen = "groups"
             return True
@@ -266,13 +300,43 @@ class UltimateFlasherApp:
                 if self.phase == "detect":
                     self.screen = "detail"
                 else:
-                    self.label = "Anulowanie…"
+                    self.label = "Cancelling…"
             return True
         if self.screen == "result":
             if code in OK_KEYS or code in BACK_KEYS:
                 self.screen = "groups"
                 self.selected = 0
                 self._set_group_entries()
+            return True
+        if self.screen == "serial_console":
+            if code in BACK_KEYS:
+                self.serial_stop.set()
+                self._open_group("SETTINGS")
+            return True
+        if self.screen == "screen_settings":
+            if code in UP_KEYS or code in DOWN_KEYS:
+                self.selected = 1 - self.selected
+            elif code in LEFT_KEYS or code in RIGHT_KEYS:
+                direction = -1 if code in LEFT_KEYS else 1
+                if self.selected == 0:
+                    self.settings["brightness"] = max(10, min(100, int(self.settings["brightness"]) + direction * 10))
+                    set_brightness(int(self.settings["brightness"]))
+                else:
+                    current = SCREEN_TIMEOUTS.index(int(self.settings["screen_timeout"])) if int(self.settings["screen_timeout"]) in SCREEN_TIMEOUTS else 1
+                    self.settings["screen_timeout"] = SCREEN_TIMEOUTS[(current + direction) % len(SCREEN_TIMEOUTS)]
+                self._save_settings()
+            elif code in BACK_KEYS:
+                self._open_group("SETTINGS")
+            return True
+        if self.screen == "about":
+            if code == KEY_Q:
+                self.screen = "github_qr"
+            elif code in BACK_KEYS:
+                self._open_group("SETTINGS")
+            return True
+        if self.screen == "github_qr":
+            if code in BACK_KEYS:
+                self.screen = "about"
             return True
         if self.screen == "confirm":
             if code in OK_KEYS:
@@ -293,6 +357,8 @@ class UltimateFlasherApp:
                 self._begin_port_selection()
             elif self.screen == "ports":
                 self._start_probe()
+            elif self.screen == "serial_ports":
+                self._start_serial_console()
             elif self.screen == "settings":
                 self._settings_action()
         elif code in BACK_KEYS:
@@ -304,6 +370,8 @@ class UltimateFlasherApp:
                 self._set_group_entries()
             elif self.screen == "ports":
                 self.screen = "detail"
+            elif self.screen == "serial_ports":
+                self._open_group("SETTINGS")
             else:
                 self._open_group(self.group)
         return True
@@ -316,26 +384,34 @@ class UltimateFlasherApp:
             self.screen = "groups"
         if self.screen == "groups":
             return ui.menu("ULTIMATE FLASHER", self.entries, self.selected, "LAB5")
-        if self.screen in {"items", "settings", "ports"}:
-            title = "WYBIERZ USB" if self.screen == "ports" else self.group
+        if self.screen in {"items", "settings", "ports", "serial_ports"}:
+            title = "SELECT SERIAL" if self.screen == "serial_ports" else ("SELECT USB" if self.screen == "ports" else self.group)
             return ui.menu(title, self.entries, self.selected)
+        if self.screen == "screen_settings":
+            return ui.screen_settings(int(self.settings["brightness"]), int(self.settings["screen_timeout"]), self.selected)
+        if self.screen == "serial_console":
+            return ui.serial_console(self.port, self.logs)
+        if self.screen == "about":
+            return ui.about(self._version())
+        if self.screen == "github_qr":
+            return ui.github_qr()
         if self.screen == "detail":
             if self.kind == "package":
                 lines = [
                     self.item["name"],
-                    "Mechanizm: Flipper protobuf RPC",
-                    f"Cel: {self.item.get('install_path', '-')}",
-                    f"Źródło: {self.item['source']['repo']}",
-                    "Weryfikacja: MD5 na urządzeniu",
+                    "Method: Flipper protobuf RPC",
+                    f"Target: {self.item.get('install_path', '-')}",
+                    f"Source: {self.item['source']['repo']}",
+                    "Verification: on-device MD5",
                 ]
             else:
                 lines = [
                     self.item["name"],
-                    f"Układ: {self.item.get('chip', '-')}",
-                    f"Źródło: {self.item.get('source', {}).get('repo', '-')}",
-                    f"Pliki: {len(self.item.get('flash', []))}",
-                    f"Autor: {self.item.get('author', 'LAB5 / upstream')}",
-                    self.item.get("notes", "Gotowy do flashowania."),
+                    f"Chip: {self.item.get('chip', '-')}",
+                    f"Source: {self.item.get('source', {}).get('repo', '-')}",
+                    f"Files: {len(self.item.get('flash', []))}",
+                    f"Author: {self.item.get('author', 'LAB5 / upstream')}",
+                    self.item.get("notes", "Ready to flash."),
                 ]
             return ui.detail(self.item["name"], lines, self.item.get("enabled", True))
         if self.screen == "confirm":
@@ -352,7 +428,12 @@ class UltimateFlasherApp:
         try:
             running = True
             while running:
-                display.show(self.draw())
+                if not self.screen_blanked and time.monotonic() - self.last_input >= int(self.settings["screen_timeout"]):
+                    self.screen_blanked = True
+                    display.show(Image.new("RGB", (320, 170), "black"))
+                    set_brightness(0)
+                elif not self.screen_blanked:
+                    display.show(self.draw())
                 for key in keyboard.read(0.08):
                     if not self.on_key(key):
                         running = False
@@ -360,6 +441,7 @@ class UltimateFlasherApp:
         finally:
             if self.token:
                 self.token.cancel()
+            self.serial_stop.set()
             keyboard.close()
             display.close()
 

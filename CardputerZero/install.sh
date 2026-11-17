@@ -10,7 +10,7 @@ fi
 
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv python3-numpy python3-pil dpkg-dev ca-certificates
+    python3 python3-pip python3-venv python3-numpy python3-pil python3-qrcode dpkg-dev ca-certificates
 
 sh "$HERE/build_deb.sh"
 PACKAGE=$(find "$HERE/dist" -maxdepth 1 -name 'ultimate-flasher-cardputerzero_*_arm64.deb' -print | sort | tail -n 1)

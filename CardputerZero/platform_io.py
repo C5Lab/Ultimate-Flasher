@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import select
 import struct
+from pathlib import Path
 
 try:
     import fcntl
@@ -21,6 +22,7 @@ KEY_ESC, KEY_BACKSPACE, KEY_TAB, KEY_ENTER, KEY_SPACE = 1, 14, 15, 28, 57
 KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT = 103, 108, 105, 106
 KEY_SEMICOLON, KEY_DOT, KEY_COMMA, KEY_SLASH = 39, 52, 51, 53
 KEY_F, KEY_X, KEY_Z, KEY_C = 33, 45, 44, 46
+KEY_Q = 16
 
 UP_KEYS = {KEY_UP, KEY_SEMICOLON, KEY_F}
 DOWN_KEYS = {KEY_DOWN, KEY_DOT, KEY_X}
@@ -28,6 +30,18 @@ LEFT_KEYS = {KEY_LEFT, KEY_COMMA, KEY_Z}
 RIGHT_KEYS = {KEY_RIGHT, KEY_SLASH, KEY_C}
 OK_KEYS = {KEY_ENTER}
 BACK_KEYS = {KEY_ESC, KEY_BACKSPACE}
+
+BACKLIGHT = Path("/sys/class/backlight/backlight")
+
+
+def set_brightness(percent: int) -> bool:
+    try:
+        maximum = int((BACKLIGHT / "max_brightness").read_text().strip())
+        value = round(maximum * max(0, min(100, percent)) / 100)
+        (BACKLIGHT / "brightness").write_text(f"{value}\n")
+        return True
+    except (OSError, ValueError):
+        return False
 
 _EVENT_FORMAT = "llHHi"
 _EVENT_SIZE = struct.calcsize(_EVENT_FORMAT)

@@ -27,7 +27,7 @@ class CardputerUiTests(unittest.TestCase):
     def test_supplied_flash_animation_layers_load(self) -> None:
         layers = ui._flash_layers()
         self.assertIsNotNone(layers)
-        self.assertTrue(all(layer.size == ui.ANIMATION_SIZE for layer in layers))
+        self.assertTrue(all(layer.size == ui.ANIMATION_LAYER_SIZE for layer in layers))
         open_frame = ui._render_flash_character(0.0, 0.0)
         connected_frame = ui._render_flash_character(100.0, 0.0)
         self.assertNotEqual(open_frame.tobytes(), connected_frame.tobytes())
