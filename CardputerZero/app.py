@@ -254,7 +254,7 @@ class UltimateFlasherApp:
         try:
             return (Path(__file__).resolve().parent / "VERSION").read_text(encoding="utf-8").strip()
         except OSError:
-            return "0.2.0"
+            return "0.3.0"
 
     def _drain_events(self) -> None:
         while True:

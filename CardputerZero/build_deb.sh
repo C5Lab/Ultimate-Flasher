@@ -19,6 +19,8 @@ if [ "${ULTIMATE_FLASHER_SKIP_VENDOR:-0}" != "1" ]; then
 fi
 
 mkdir -p "$ROOT/DEBIAN" "$APP_ROOT" "$OUT"
+mkdir -p "$ROOT/usr/share/doc/ultimate-flasher-cardputerzero"
+install -m 644 "$REPO/LICENSE" "$ROOT/usr/share/doc/ultimate-flasher-cardputerzero/copyright"
 
 mkdir -p "$APP_ROOT/CardputerZero"
 cp "$REPO/CardputerZero/__init__.py" "$REPO/CardputerZero/__main__.py" \
@@ -66,31 +68,31 @@ if [ "${ULTIMATE_FLASHER_SKIP_VENDOR:-0}" != "1" ]; then
 fi
 
 mkdir -p "$ROOT/usr/share/APPLaunch/bin" "$ROOT/usr/share/APPLaunch/applications"
-mkdir -p "$ROOT/usr/share/APPLaunch/share/images" "$ROOT/etc/udev/rules.d"
+mkdir -p "$ROOT/usr/share/APPLaunch/share/images" "$ROOT/usr/lib/udev/rules.d"
 
-cat > "$ROOT/usr/share/APPLaunch/bin/ultimate-flasher" <<'LAUNCHER'
+cat > "$ROOT/usr/share/APPLaunch/bin/ultimate-flasher-cardputerzero" <<'LAUNCHER'
 #!/bin/sh
 APP_ROOT=/usr/share/ultimate-flasher-cardputerzero
 export PYTHONPATH="$APP_ROOT/vendor:$APP_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 cd "$APP_ROOT"
 exec /usr/bin/python3 -m CardputerZero "$@"
 LAUNCHER
-chmod 755 "$ROOT/usr/share/APPLaunch/bin/ultimate-flasher"
+chmod 755 "$ROOT/usr/share/APPLaunch/bin/ultimate-flasher-cardputerzero"
 
-cat > "$ROOT/usr/share/APPLaunch/applications/ultimate-flasher.desktop" <<'DESKTOP'
+cat > "$ROOT/usr/share/APPLaunch/applications/ultimate-flasher-cardputerzero.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
 Name=Ultimate Flasher
 Comment=LAB5 USB firmware flasher
-Exec=/usr/share/APPLaunch/bin/ultimate-flasher
+Exec=/usr/share/APPLaunch/bin/ultimate-flasher-cardputerzero
 Terminal=false
 Sysplause=true
-Icon=share/images/ultimate-flasher.png
+Icon=share/images/ultimate-flasher-cardputerzero.png
 Categories=Utility;Development;
 StartupNotify=false
 DESKTOP
 
-python3 - "$REPO/CardputerZero/Flasher_icon.png" "$ROOT/usr/share/APPLaunch/share/images/ultimate-flasher.png" <<'PY'
+python3 - "$REPO/CardputerZero/Flasher_icon.png" "$ROOT/usr/share/APPLaunch/share/images/ultimate-flasher-cardputerzero.png" <<'PY'
 import sys
 from PIL import Image
 
@@ -102,13 +104,13 @@ canvas.alpha_composite(image, ((icon_size - image.width) // 2, (icon_size - imag
 canvas.save(sys.argv[2])
 PY
 
-install -m 644 "$HERE/42-ultimate-flasher.rules" "$ROOT/etc/udev/rules.d/42-ultimate-flasher.rules"
+install -m 644 "$HERE/42-ultimate-flasher.rules" "$ROOT/usr/lib/udev/rules.d/42-ultimate-flasher-cardputerzero.rules"
 
 cat > "$ROOT/DEBIAN/control" <<CONTROL
 Package: ultimate-flasher-cardputerzero
 Version: $VERSION
 Architecture: arm64
-Maintainer: C5Lab
+Maintainer: LAB5
 Depends: python3 (>= 3.10), python3-numpy, python3-pil, python3-qrcode
 Section: utils
 Priority: optional
